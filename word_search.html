@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        td {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-size: 24px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+        .found {
+            background-color: yellow;
+        }
+        .word-list {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .crossed {
+            text-decoration: line-through;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Search Web App</h1>
+    <table id="wordSearch"></table>
+    <div class="word-list" id="wordList">
+        <p>Find these words:</p>
+        <ul id="words">
+            <li>APPLE</li>
+            <li>BANANA</li>
+            <li>CHERRY</li>
+            <li>GRAPE</li>
+            <li>LEMON</li>
+        </ul>
+    </div>
+
+    <script>
+        const size = 12;
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const words = ["APPLE", "BANANA", "CHERRY", "GRAPE", "LEMON"];
+
+        function generateGrid() {
+            const table = document.getElementById("wordSearch");
+
+            for (let i = 0; i < size; i++) {
+                const row = table.insertRow();
+                for (let j = 0; j < size; j++) {
+                    const cell = row.insertCell();
+                    cell.textContent = letters[Math.floor(Math.random() * letters.length)];
+                    cell.addEventListener('click', () => handleCellClick(cell));
+                }
+            }
+        }
+
+        function handleCellClick(cell) {
+            cell.classList.toggle('found');
+            checkWords();
+        }
+
+        function checkWords() {
+            const foundLetters = Array.from(document.querySelectorAll('.found')).map(cell => cell.textContent).join('');
+
+            words.forEach(word => {
+                if (foundLetters.includes(word)) {
+                    const listItem = document.querySelector(`#words li:contains('${word}')`);
+                    if (listItem && !listItem.classList.contains('crossed')) {
+                        listItem.classList.add('crossed');
+                    }
+                }
+            });
+        }
+
+        window.onload = generateGrid;
+    </script>
+</body>
+</html>
