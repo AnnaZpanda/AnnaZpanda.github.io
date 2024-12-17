@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-scale, initial-scale=1.0">
+    <title>Word Search Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        td {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-size: 24px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+        .found {
+            background-color: yellow;
+        }
+        .word-list {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .crossed {
+            text-decoration: line-through;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Search Web App</h1>
+    <table id="wordSearch"></table>
+    <div class="word-list" id="wordList">
+        <p>Find these words:</p>
+        <ul id="words">
+            <!-- List of words will be dynamically inserted here -->
+        </ul>
+    </div>
+
+    <script>
+        const size = 12;
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const wordList = ["APPLE", "BANANA", "CHERRY", "GRAPE", "LEMON", "MANGO", "ORANGE", "PEAR", "PEACH", "DRIZZLING"];
+        
+        // Shuffle function to randomize the word list
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]]; // Swap elements
+            }
+        }
+
+        let words = [];
+
+        function generateGrid() {
+            // Shuffle the word list and select the first 5 words
+            shuffleArray(wordList);
+            words = wordList.slice(0, 5);
+
+            // Update the displayed word list
+            const wordListElement = document.getElementById("words");
+            wordListElement.innerHTML = ""; // Clear existing words
+            words.forEach(word => {
+                const li = document.createElement("li");
+                li.textContent = word;
+                li.id = word;
+                wordListElement.appendChild(li);
+            });
+
+            const table = document.getElementById("wordSearch");
+            table.innerHTML = ""; // Clear previous grid
+
+            const grid = Array.from({ length: size }, () => Array(size).fill(null));
+
+            function placeWord(word) {
+                const directions = [
+                    { x: 1, y: 0 },  // horizontal
+                    { x: 0, y: 1 },  // vertical
+                    { x: 1, y: 1 },  // diagonal right-down
+                    { x: -1, y: 1 }, // diagonal left-down
+                ];
+
+                let placed = false;
+                while (!placed) {
+                    const direction = directions[Math.floor(Math.random() * directions.length)];
+                    const startX = Math.floor(Math.random() * size);
+                    const startY = Math.floor(Math.random() * size);
+
+                    let x = startX;
+                    let y = startY;
+                    let valid = true;
+
+                    for (let i = 0; i < word.length; i++) {
+                        if (
+                            x < 0 || x >= size || y < 0 || y >= size ||
+                            (grid[y][x] && grid[y][x] !== word[i])
+                        ) {
+                            valid = false;
+                            break;
+                        }
+                        x += direction.x;
+                        y += direction.y;
+                    }
+
+                    if (valid) {
+                        x = startX;
+                        y = startY;
+                        for (let i = 0; i < word.length; i++) {
+                            grid[y][x] = word[i];
+                            x += direction.x;
+                            y += direction.y;
+                        }
+                        placed = true;
+                    }
+                }
+            }
+
+            words.forEach(placeWord);
+
+            // Create the table cells for the grid
+            for (let i = 0; i < size; i++) {
+                const row = table.insertRow();
+                for (let j = 0; j < size; j++) {
+                    const cell = row.insertCell();
+                    cell.textContent = grid[i][j] || letters[Math.floor(Math.random() * letters.length)];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', () => handleCellClick(cell));
+                }
+            }
+        }
+
+        let selectedCells = [];
+
+        function handleCellClick(cell) {
+            if (cell.classList.contains('found')) {
+                // Deselect the cell if it's already highlighted
+                cell.classList.remove('found');
+                selectedCells = selectedCells.filter(c => c !== cell);
+            } else {
+                // Otherwise, highlight the cell
+                cell.classList.add('found');
+                selectedCells.push(cell);
+            }
+            checkWords();
+        }
+
+        function checkWords() {
+            const selectedWord = selectedCells.map(cell => cell.textContent).join('');
+            if (words.includes(selectedWord)) {
+                document.getElementById(selectedWord).classList.add('crossed');
+                selectedCells = [];
+                checkAllWordsFound();
+            }
+        }
+
+        function checkAllWordsFound() {
+            const foundWords = words.filter(word => document.getElementById(word).classList.contains('crossed'));
+            if (foundWords.length === words.length) {
+                window.location.href = "congratulations.html"; // Redirect to the Congratulations page
+            }
+        }
+
+        window.onload = generateGrid;
+    </script>
+</body>
+</html>
