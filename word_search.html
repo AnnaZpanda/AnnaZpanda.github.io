@@ -171,6 +171,12 @@
                         y = startY;
                         for (let i = 0; i < word.length; i++) {
                             grid[y][x] = word[i];
+                            const cell = table.rows[y]?.cells[x];
+                            if (cell) {
+                                cell.dataset.row = y;
+                                cell.dataset.col = x;
+                                cell.addEventListener('click', () => handleCellClick(cell));
+                            }
                             x += direction.x;
                             y += direction.y;
                         }
@@ -180,14 +186,10 @@
             }
 
             words.forEach(placeWord);
+        }
 
-            for (let i = 0; i < size; i++) {
-                const row = table.insertRow();
-                for (let j = 0; j < size; j++) {
-                    const cell = row.insertCell();
-                    cell.textContent = grid[i][j] || letters[Math.floor(Math.random() * letters.length)];
-                }
-            }
+        function handleCellClick(cell) {
+            cell.classList.toggle('found');
         }
 
         window.onload = generateGrid;
