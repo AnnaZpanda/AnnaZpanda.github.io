@@ -8,16 +8,17 @@
         body {
             font-family: 'Arial', sans-serif;
             text-align: center;
-            background-color: #f2e8cf; /* Light beige */
-            color: #386641; /* Dark green */
+            background-color: #f2e8cf;
+            color: #386641;
             margin-top: 50px;
-            background-image: url('Christmas_tree.webp');/* Add the image path here */
+            background-image: url('Christmas_tree.webp');
             background-size: cover;
             background-position: center;
+            overflow: hidden;
         }
 
         h1 {
-            color: #bc4749; /* Red */
+            color: #bc4749;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
         table {
@@ -32,24 +33,24 @@
             height: 40px;
             text-align: center;
             font-size: 24px;
-            border: 1px solid #386641; /* Dark green */
+            border: 1px solid #386641;
             cursor: pointer;
-            background-color: #f2e8cf; /* Light beige */
+            background-color: #f2e8cf;
         }
         td:hover {
-            background-color: #a7c957; /* Light green */
+            background-color: #a7c957;
         }
         .found {
-            background-color: #6a994e; /* Dark green */
-            color: #f2e8cf; /* Light beige */
+            background-color: #6a994e;
+            color: #f2e8cf;
         }
         .word-list {
             width: 517px;
-            margin: 20px auto; /* Center horizontally */
+            margin: 20px auto;
             font-size: 18px;
-            color: #bc4749; /* Red */
+            color: #bc4749;
             background-color: #f2e8cf;
-            text-align: center; /* Center the text */
+            text-align: center;
         }
         .crossed {
             text-decoration: line-through;
@@ -64,6 +65,23 @@
             content: "🎄";
             padding-right: 10px;
         }
+        .snowflake {
+            position: absolute;
+            top: -50px;
+            font-size: 24px;
+            color: white;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% {
+                top: -50px;
+                opacity: 1;
+            }
+            100% {
+                top: 100vh;
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -71,16 +89,26 @@
     <table id="wordSearch"></table>
     <div class="word-list" id="wordList">
         <p>Find these words:</p>
-        <ul id="words">
-            <!-- List of words will be dynamically inserted here -->
-        </ul>
+        <ul id="words"></ul>
     </div>
 
     <script>
         const size = 12;
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const wordList = ["SNOW", "SANTA", "TREE", "REINDEER", "GIFTS", "CANDY", "JINGLE", "HOLIDAY", "TINSEL", "FESTIVE", "MISTLETOE", "LIGHTS", "YULETIDE", "SLEIGH", "CAROLS", "NOEL", "WINTER", "FAMILY", "PUDDING"];
-        
+
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+            snowflake.textContent = '❄';
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.animationDuration = Math.random() * 3 + 2 + 's';
+            document.body.appendChild(snowflake);
+            setTimeout(() => snowflake.remove(), 5000);
+        }
+
+        setInterval(createSnowflake, 300);
+
         function shuffleArray(arr) {
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -110,10 +138,10 @@
 
             function placeWord(word) {
                 const directions = [
-                    { x: 1, y: 0 },  // horizontal
-                    { x: 0, y: 1 },  // vertical
-                    { x: 1, y: 1 },  // diagonal right-down
-                    { x: -1, y: 1 }, // diagonal left-down
+                    { x: 1, y: 0 },
+                    { x: 0, y: 1 },
+                    { x: 1, y: 1 },
+                    { x: -1, y: 1 },
                 ];
 
                 let placed = false;
@@ -158,39 +186,7 @@
                 for (let j = 0; j < size; j++) {
                     const cell = row.insertCell();
                     cell.textContent = grid[i][j] || letters[Math.floor(Math.random() * letters.length)];
-                    cell.dataset.row = i;
-                    cell.dataset.col = j;
-                    cell.addEventListener('click', () => handleCellClick(cell));
                 }
-            }
-        }
-
-        let selectedCells = [];
-
-        function handleCellClick(cell) {
-            if (cell.classList.contains('found')) {
-                cell.classList.remove('found');
-                selectedCells = selectedCells.filter(c => c !== cell);
-            } else {
-                cell.classList.add('found');
-                selectedCells.push(cell);
-            }
-            checkWords();
-        }
-
-        function checkWords() {
-            const selectedWord = selectedCells.map(cell => cell.textContent).join('');
-            if (words.includes(selectedWord)) {
-                document.getElementById(selectedWord).classList.add('crossed');
-                selectedCells = [];
-                checkAllWordsFound();
-            }
-        }
-
-        function checkAllWordsFound() {
-            const foundWords = words.filter(word => document.getElementById(word).classList.contains('crossed'));
-            if (foundWords.length === words.length) {
-                window.location.href = "congratulations.html";
             }
         }
 
