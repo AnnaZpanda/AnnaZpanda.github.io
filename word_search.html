@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-scale, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Christmas Word Search</title>
     <style>
         body {
@@ -193,6 +193,16 @@
 
         function handleCellClick(cell) {
             cell.classList.toggle('found');
+            checkWords();
+        }
+
+        function checkWords() {
+            words.forEach(word => {
+                const found = Array.from(document.querySelectorAll('.found')).map(cell => cell.textContent).join('');
+                if (found.includes(word)) {
+                    document.getElementById(word).classList.add('crossed');
+                }
+            });
         }
 
         window.onload = generateGrid;
