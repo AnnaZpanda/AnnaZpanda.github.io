@@ -3,40 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-scale, initial-scale=1.0">
-    <title>Word Search Web App</title>
+    <title>Christmas Word Search Web App</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             text-align: center;
+            background-color: #f2e8cf; /* Light beige */
+            color: #386641; /* Dark green */
             margin-top: 50px;
+            background-image: url('Christmas_tree'); /* Add the image path here */
+            background-size: cover;
+            background-position: center;
+        }
+
+        h1 {
+            color: #bc4749; /* Red */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
         table {
             margin: 0 auto;
             border-collapse: collapse;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            padding: 10px;
         }
         td {
             width: 40px;
             height: 40px;
             text-align: center;
             font-size: 24px;
-            border: 1px solid #000;
+            border: 1px solid #386641; /* Dark green */
             cursor: pointer;
+            background-color: #f2e8cf; /* Light beige */
+        }
+        td:hover {
+            background-color: #a7c957; /* Light green */
         }
         .found {
-            background-color: yellow;
+            background-color: #6a994e; /* Dark green */
+            color: #f2e8cf; /* Light beige */
         }
         .word-list {
             margin-top: 20px;
             font-size: 18px;
+            color: #bc4749; /* Red */
         }
         .crossed {
             text-decoration: line-through;
             color: gray;
         }
+        li {
+            list-style-type: none;
+            font-size: 20px;
+            padding: 5px;
+        }
+        li::before {
+            content: "🎄";
+            padding-right: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>Word Search Web App</h1>
+    <h1>Christmas Word Search</h1>
     <table id="wordSearch"></table>
     <div class="word-list" id="wordList">
         <p>Find these words:</p>
@@ -48,7 +76,7 @@
     <script>
         const size = 12;
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const wordList = ["APPLE", "BANANA", "CHERRY", "GRAPE", "LEMON", "MANGO", "ORANGE", "PEAR", "PEACH", "DRIZZLING"];
+        const wordList = ["SNOW", "SANTA", "TREE", "REINDEER", "GIFTS", "CANDY", "JINGLE", "HOLIDAY", "TINSLE", "FESTIVE"];
         
         // Shuffle function to randomize the word list
         function shuffleArray(arr) {
