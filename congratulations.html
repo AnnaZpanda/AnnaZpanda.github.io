@@ -39,11 +39,11 @@
 <body>
     <h1>Merry Christmas and congratulations!</h1>
     <p>You have found all the words!</p>
-    <button onclick="goBack()">Go Back</button>
+    <button onclick="goToWordSearch()">Play Again</button>
 
     <script>
-        function goBack() {
-            window.history.back(); // Goes back to the previous page
+        function goToWordSearch() {
+            window.location.href = 'word_search.html'; // Redirects to word_search.html
         }
     </script>
 </body>
