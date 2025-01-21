@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper</title>
+    <style>
+        body {
+            font-family: 'Creepster', cursive;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-image: url('zombie-apocalypse.webp'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: white; /* Adjusted text color for better visibility */
+        }
+
+        @font-face {
+            font-family: 'Creepster';
+            src: url('https://fonts.gstatic.com/s/creepster/v13/AlZy_zVUqJz4yMrniH4Rcn35.woff2') format('woff2');
+        }
+
+        #game-board {
+            display: grid;
+            margin: 0 auto;
+            gap: 1px;
+            background-color: #777;
+            width: 90vmin;
+            height: 90vmin;
+        }
+
+        .cell {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #bbb;
+            border: 1px solid #999;
+            cursor: pointer;
+            font-size: calc(90vmin / 20);
+        }
+
+        .cell.revealed {
+            background-color: #ddd;
+            cursor: default;
+        }
+
+        .cell.mine {
+            background-color: red;
+            color: white;
+        }
+
+        .cell.mine.exploding {
+            animation: explode 0.5s ease-out;
+            background-color: orange !important;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(1);
+                background-color: red;
+            }
+            50% {
+                transform: scale(1.5);
+                background-color: yellow;
+            }
+            100% {
+                transform: scale(1);
+                background-color: orange;
+            }
+        }
+
+        .cell.locked {
+            background-color: #444;
+            color: white;
+        }
+
+        #reset-btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            margin: 0;
+            padding: 10px;
+        }
+
+        #key-count {
+            margin: 10px;
+            font-size: 18px;
+            position: relative;
+        }
+
+        #key-animation {
+            position: absolute;
+            top: -40px;
+            right: 10px;
+            font-size: 24px;
+            color: gold;
+            animation: bounce 1s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            50% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: red;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #game-over.show {
+            opacity: 1;
+        }
+
+        #game-over.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Minesweeper</h1>
+        <div id="key-count">Keys: 0</div>
+        <div id="game-board"></div>
+        <button id="reset-btn">Restart Game</button>
+        <div id="game-over" class="hidden">Game Over</div>
+    </div>
+
+    <script>
+        const boardSize = 10;
+        const mineCount = 15;
+        const lockedTileCount = 10;
+
+        let board = [];
+        let isFirstClick = true;
+        let keysCollected = 0;
+        let lockedTilesUnlocked = 0;
+        let tilesClicked = 0;
+        let nextKeyClickThreshold = getRandomClickThreshold();
+
+        function initBoard() {
+            board = Array.from({ length: boardSize }, () =>
+                Array.from({ length: boardSize }, () => ({
+                    mine: false,
+                    revealed: false,
+                    locked: false,
+                    marked: false, // New property for tombstones
+                    adjacentMines: 0,
+                }))
+            );
+
+            keysCollected = 0;
+            lockedTilesUnlocked = 0;
+            tilesClicked = 0;
+            nextKeyClickThreshold = getRandomClickThreshold();
+        }
+
+        function placeMinesAndLockedTiles(excludeRow, excludeCol) {
+            let placedMines = 0;
+            while (placedMines < mineCount) {
+                const row = Math.floor(Math.random() * boardSize);
+                const col = Math.floor(Math.random() * boardSize);
+                if (!board[row][col].mine && (row !== excludeRow || col !== excludeCol)) {
+                    board[row][col].mine = true;
+                    placedMines++;
+                }
+            }
+
+            let placedLockedTiles = 0;
+            while (placedLockedTiles < lockedTileCount) {
+                const row = Math.floor(Math.random() * boardSize);
+                const col = Math.floor(Math.random() * boardSize);
+                if (!board[row][col].mine && !board[row][col].locked && (row !== excludeRow || col !== excludeCol)) {
+                    board[row][col].locked = true;
+                    placedLockedTiles++;
+                }
+            }
+
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (!board[row][col].mine) {
+                        board[row][col].adjacentMines = countAdjacentMines(row, col);
+                    }
+                }
+            }
+        }
+
+        function countAdjacentMines(row, col) {
+            const directions = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1], [1, 0], [1, 1],
+            ];
+
+            return directions.reduce((count, [dx, dy]) => {
+                const newRow = row + dx;
+                const newCol = col + dy;
+                if (newRow >= 0 && newRow < boardSize && newCol >= 0 && newCol < boardSize && board[newRow][newCol].mine) {
+                    count++;
+                }
+                return count;
+            }, 0);
+        }
+
+        function renderBoard() {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+            gameBoard.style.gridTemplateRows = `repeat(${boardSize}, 1fr)`;
+            gameBoard.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    if (board[row][col].revealed) {
+                        cell.classList.add('revealed');
+                        if (board[row][col].mine) {
+                            cell.classList.add('mine');
+                            if (board[row][col].exploding) {
+                                cell.classList.add('exploding');
+                            }
+                            cell.textContent = '💣';
+                        } else if (board[row][col].adjacentMines > 0) {
+                            cell.textContent = board[row][col].adjacentMines;
+                        }
+                    } else if (board[row][col].locked) {
+                        cell.classList.add('locked');
+                        cell.textContent = '🔒';
+                    } else if (board[row][col].marked) {
+                        cell.textContent = '🪦'; // Tombstone marker
+                    }
+                    cell.addEventListener('click', () => handleCellClick(row, col));
+                    cell.addEventListener('contextmenu', (event) => handleCellMark(row, col, event)); // Right-click for marking
+                    gameBoard.appendChild(cell);
+                }
+            }
+
+            document.getElementById('key-count').textContent = `Keys: ${keysCollected}`;
+        }
+
+        function handleCellClick(row, col) {
+            if (board[row][col].revealed || board[row][col].marked) return;
+
+            if (isFirstClick) {
+                isFirstClick = false;
+                placeMinesAndLockedTiles(row, col);
+            }
+
+            if (board[row][col].locked) {
+                if (keysCollected > 0) {
+                    keysCollected--;
+                    lockedTilesUnlocked++;
+                    board[row][col].locked = false;
+                } else {
+                    alert('You need a key to unlock this tile!');
+                    return;
+                }
+            }
+
+            board[row][col].revealed = true;
+
+            tilesClicked++;
+            if (tilesClicked >= nextKeyClickThreshold && lockedTilesUnlocked < lockedTileCount) {
+                keysCollected++;
+                nextKeyClickThreshold += getRandomClickThreshold();
+                showKeyRewardAnimation();
+            }
+
+            if (board[row][col].mine) {
+                revealBombs(row, col);
+                return;
+            } else if (board[row][col].adjacentMines === 0) {
+                revealEmptyCells(row, col);
+            }
+
+            renderBoard();
+        }
+
+        function handleCellMark(row, col, event) {
+            event.preventDefault(); // Prevent the default context menu
+
+            if (board[row][col].revealed) return; // Don't allow marking revealed cells
+
+            board[row][col].marked = !board[row][col].marked; // Toggle marked state
+            renderBoard(); // Re-render the board
+        }
+
+        function showKeyRewardAnimation() {
+            const keyCountElement = document.getElementById('key-count');
+            const keyAnimation = document.createElement('div');
+            keyAnimation.id = 'key-animation';
+            keyAnimation.textContent = '+1 🔑';
+            keyCountElement.appendChild(keyAnimation);
+
+            setTimeout(() => {
+                keyAnimation.remove();
+            }, 1000);
+        }
+
+        function revealBombs(startRow, startCol) {
+            const bombs = [];
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (board[row][col].mine) {
+                        bombs.push([row, col]);
+                    }
+                }
+            }
+
+            let index = 0;
+            function explodeNextBomb() {
+                if (index < bombs.length) {
+                    const [row, col] = bombs[index];
+                    board[row][col].revealed = true;
+                    board[row][col].exploding = true;
+                    renderBoard();
+                    index++;
+                    setTimeout(explodeNextBomb, 200);
+                } else {
+                    showGameOverAnimation();
+                }
+            }
+
+            explodeNextBomb();
+        }
+
+        function showGameOverAnimation() {
+            const gameOverElement = document.getElementById('game-over');
+            gameOverElement.classList.remove('hidden');
+            setTimeout(() => {
+                gameOverElement.classList.add('show');
+            }, 100);
+        }
+
+        function revealEmptyCells(row, col) {
+            const directions = [
+                [-1, -1], [-1, 0], [-1, 1],
+                [0, -1],           [0, 1],
+                [1, -1], [1, 0], [1, 1],
+            ];
+
+            directions.forEach(([dx, dy]) => {
+                const newRow = row + dx;
+                const newCol = col + dy;
+                if (
+                    newRow >= 0 && newRow < boardSize &&
+                    newCol >= 0 && newCol < boardSize &&
+                    !board[newRow][newCol].revealed &&
+                    !board[newRow][newCol].mine
+                ) {
+                    board[newRow][newCol].revealed = true;
+                    if (board[newRow][newCol].adjacentMines === 0) {
+                        revealEmptyCells(newRow, newCol);
+                    }
+                }
+            });
+        }
+
+        function resetGame() {
+            isFirstClick = true;
+            initBoard();
+            renderBoard();
+            const gameOverElement = document.getElementById('game-over');
+            gameOverElement.classList.add('hidden');
+            gameOverElement.classList.remove('show');
+        }
+
+        function getRandomClickThreshold() {
+            return Math.floor(Math.random() * 3) + 3;
+        }
+
+        document.getElementById('reset-btn').addEventListener('click', resetGame);
+
+        resetGame();
+    </script>
+</body>
+</html>
